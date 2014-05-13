@@ -10,9 +10,13 @@ Vagrant.configure("2") do |config|
   # Expose the Docker port
   config.vm.network :forwarded_port, guest: 4243, host: 4243
 
+  # Enable NFS synced folder by default
+  config.vm.synced_folder ".", "/vagrant", type: "nfs"
+
   # Attach the b2d ISO so that it can boot
   config.vm.provider :virtualbox do |v|
     v.check_guest_additions = false
+    v.functional_vboxsf = false
     v.customize "pre-boot", [
       "storageattach", :id,
       "--storagectl", "IDE Controller",
@@ -27,6 +31,7 @@ Vagrant.configure("2") do |config|
 
   config.vm.provider :parallels do |p|
     p.check_guest_tools = false
+    p.functional_psf = false
     p.customize "pre-boot", [
       "set", :id,
       "--device-set", "cdrom0",
