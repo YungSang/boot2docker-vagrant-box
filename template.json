@@ -3,7 +3,7 @@
         "name": "virtualbox",
         "type": "virtualbox-iso",
         "iso_url": "boot2docker.iso",
-        "iso_checksum": "92e9d0fa63463f9411a08860f7ea68e1",
+        "iso_checksum": "92e9d0fa63463f9411a08860f7ea68e1",        
         "iso_checksum_type": "md5",
         "boot_wait": "5s",
         "ssh_username": "docker",
@@ -14,6 +14,8 @@
         "disk_size": 40960,
         "hard_drive_interface": "sata",
         "vboxmanage": [
+            ["createhd", "--filename", "packer-hd", "--size", "512"],
+
             ["modifyvm", "{{.Name}}", "--memory", "512"],
             ["modifyvm", "{{.Name}}", "--nictype1", "virtio"],
             ["modifyvm", "{{.Name}}", "--nictype2", "virtio"],
@@ -22,7 +24,14 @@
             ["modifyvm", "{{.Name}}", "--nictype5", "virtio"],
             ["modifyvm", "{{.Name}}", "--nictype6", "virtio"],
             ["modifyvm", "{{.Name}}", "--nictype7", "virtio"],
-            ["modifyvm", "{{.Name}}", "--nictype8", "virtio"]
+            ["modifyvm", "{{.Name}}", "--nictype8", "virtio"],
+           
+            ["storageattach", "{{.Name}}", 
+            "--storagectl","SATA Controller", 
+            "--type","hdd",
+            "--device","0",
+            "--port","29",
+            "--medium", "packer-hd.vdi"]
         ]
     }, {
         "name": "parallels",
@@ -51,15 +60,27 @@
             "sudo mkfs.ext4 -F -L boot2docker-data /dev/sda1",
             "sudo swapon /dev/sda2",
 
+
+            "(echo n; echo p; echo 1; echo ; echo ; echo w) | sudo fdisk /dev/sdb",
+            "sudo mkfs.ext4 -F -L packer /dev/sdb1",
+
             "sudo /usr/local/etc/init.d/docker stop",
             "sudo /etc/rc.d/automount",
 
-            "mkdir -p /tmp/boot2docker"
+            "sudo mkdir -p /mnt/sdb1",
+            "sudo mount /dev/sdb1 /mnt/sdb1",
+
+            "mkdir -p /tmp/boot2docker",
+            "mkdir -p /tmp/packer"
         ]
     }, {
         "type": "file",
         "source": "files/",
         "destination": "/tmp/boot2docker"
+    },{
+        "type": "file",
+        "source": "packer/",
+        "destination": "/tmp/packer"
     }, {
         "type": "shell",
         "inline": [
@@ -73,7 +94,14 @@
 
             "sudo mkdir -p /var/lib/boot2docker/bin",
             "sudo cp /tmp/boot2docker/docker-enter /var/lib/boot2docker/bin/",
-            "sudo chmod +x /var/lib/boot2docker/bin/docker-enter"
+            "sudo chmod +x /var/lib/boot2docker/bin/docker-enter",
+
+            "echo checking directory content---------",
+            "ls -l -a /tmp/packer",
+
+            "sudo cp /tmp/packer/* /mnt/sdb1",
+            "sudo chmod +x /mnt/sdb1/*",
+            "echo -------------"
         ]
     }],
 
