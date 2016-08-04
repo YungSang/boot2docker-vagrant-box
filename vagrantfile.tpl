@@ -14,9 +14,13 @@ Vagrant.configure("2") do |config|
   # Disable synced folder by default
   config.vm.synced_folder ".", "/vagrant", disabled: true
 
+  # Enable NFS synced folder by default
+  config.vm.synced_folder ".", "/vagrant", type: "nfs"
+
   # Attach the b2d ISO so that it can boot
   config.vm.provider :virtualbox do |v|
     v.check_guest_additions = false
+    v.functional_vboxsf = false
     v.customize "pre-boot", [
       "storageattach", :id,
       "--storagectl", "IDE Controller",
